@@ -127,9 +127,9 @@ jobs:
       id: test_results
       run: |
         if [ -f "target/test-results/results.json" ]; then
-          # Mostrar primeras líneas del JSON para diagnóstico
-          echo "📋 Primeras líneas del JSON:"
-          head -100 target/test-results/results.json
+          # Mostrar la sección de suites del JSON para diagnóstico
+          echo "📋 Sección 'suites' del JSON:"
+          jq '.suites' target/test-results/results.json | head -200
           echo "================================"
           
           # Extraer estadísticas usando diferentes métodos según la estructura
