@@ -127,9 +127,10 @@ jobs:
       id: test_results
       run: |
         if [ -f "target/test-results/results.json" ]; then
-          # Listar estructura del JSON para debug
-          echo "📋 Estructura del JSON:"
-          cat target/test-results/results.json | jq '.' || echo "Error al parsear JSON"
+          # Mostrar primeras líneas del JSON para diagnóstico
+          echo "📋 Primeras líneas del JSON:"
+          head -100 target/test-results/results.json
+          echo "================================"
           
           # Extraer estadísticas usando diferentes métodos según la estructura
           PASSED=$(jq '[.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "passed")] | length' target/test-results/results.json 2>/dev/null || echo "0")
@@ -157,19 +158,11 @@ jobs:
           > /tmp/scenarios_list.txt
           > /tmp/scenarios_html.txt
           
-          # Extraer escenarios usando jq de manera más robusta
-          jq -r '
-            .suites[]? | 
-            .specs[]? | 
-            .tests[]? | 
-            {
-              title: .title, 
-              status: (.results[]?.status // "unknown")
-            } | 
-            "\(.title)|\(.status)"
-          ' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
-            if [ -n "$title" ] && [ "$title" != "null" ]; then
-              echo "  -> Escenario: $title - Estado: $status"
+          # Método 1: Extracción estándar de Playwright
+          echo "Intentando método 1..."
+          jq -r '.suites[]?.specs[]?.tests[]? | "\(.title)|\(.results[0]?.status // "unknown")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
+            if [ -n "$title" ] && [ "$title" != "null" ] && [ "$title" != "" ]; then
+              echo "  ✓ Encontrado: $title - $status"
               case "$status" in
                 "passed")
                   echo "- ✅ **PASSED**: $title" >> /tmp/scenarios_list.txt
@@ -187,10 +180,58 @@ jobs:
             fi
           done
           
-          # Verificar si se capturaron escenarios
+          # Verificar si se capturaron escenarios con método 1
           if [ ! -s /tmp/scenarios_html.txt ]; then
-            echo "<tr><td colspan='2' style='border: 1px solid #ddd; padding: 10px; text-align: center; color: gray;'>No se pudieron extraer los nombres de los escenarios</td></tr>" > /tmp/scenarios_html.txt
+            echo "Método 1 falló. Intentando método 2 (estructura alternativa)..."
+            # Método 2: Buscar cualquier objeto con title y status
+            jq -r '.. | objects | select(.title? and .status?) | "\(.title)|\(.status)"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
+              if [ -n "$title" ] && [ "$title" != "null" ]; then
+                echo "  ✓ Encontrado (método 2): $title - $status"
+                case "$status" in
+                  "passed"|"expected")
+                    echo "- ✅ **PASSED**: $title" >> /tmp/scenarios_list.txt
+                    echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:green; font-weight: bold;'>✅ PASSED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
+                    ;;
+                  "failed"|"unexpected"|"timedOut")
+                    echo "- ❌ **FAILED**: $title" >> /tmp/scenarios_list.txt
+                    echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:red; font-weight: bold;'>❌ FAILED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
+                    ;;
+                  "skipped")
+                    echo "- ⏭️ **SKIPPED**: $title" >> /tmp/scenarios_list.txt
+                    echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:gray; font-weight: bold;'>⏭️ SKIPPED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
+                    ;;
+                esac
+              fi
+            done
+          fi
+          
+          # Último recurso: usar los títulos de specs
+          if [ ! -s /tmp/scenarios_html.txt ]; then
+            echo "Método 2 falló. Usando specs como fallback..."
+            jq -r '.suites[]?.specs[]? | "\(.title)|\(.tests[0]?.results[0]?.status // "passed")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
+              if [ -n "$title" ] && [ "$title" != "null" ]; then
+                echo "  ✓ Encontrado (specs): $title - $status"
+                case "$status" in
+                  "passed")
+                    echo "- ✅ **PASSED**: $title" >> /tmp/scenarios_list.txt
+                    echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:green; font-weight: bold;'>✅ PASSED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
+                    ;;
+                  *)
+                    echo "- ❌ **FAILED**: $title" >> /tmp/scenarios_list.txt
+                    echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:red; font-weight: bold;'>❌ FAILED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
+                    ;;
+                esac
+              fi
+            done
+          fi
+          
+          # Verificar si finalmente se capturaron escenarios
+          if [ ! -s /tmp/scenarios_html.txt ]; then
+            echo "⚠️ Todos los métodos fallaron"
+            echo "<tr><td colspan='2' style='border: 1px solid #ddd; padding: 10px; text-align: center; color: orange;'>⚠️ No se pudieron extraer los nombres de los escenarios del JSON</td></tr>" > /tmp/scenarios_html.txt
             echo "- ⚠️ No se pudieron extraer los nombres de los escenarios" > /tmp/scenarios_list.txt
+          else
+            echo "✅ Escenarios extraídos correctamente"
           fi
           
           # Crear tabla de resumen HTML para el email
