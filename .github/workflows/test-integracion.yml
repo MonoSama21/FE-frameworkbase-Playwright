@@ -150,7 +150,36 @@ jobs:
           echo "⏭️ SKIPPED: $SKIPPED"
           echo "📝 TOTAL: $TOTAL"
           
-          # Crear tabla HTML para el email
+          # Extraer nombres de escenarios y sus estados
+          echo "📝 Extrayendo detalles de escenarios..."
+          SCENARIOS_LIST=""
+          SCENARIOS_HTML=""
+          
+          # Iterar sobre los tests y extraer título + status
+          jq -r '.suites[]?.specs[]?.tests[]? | "\(.title)|\(.results[]?.status)"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
+            if [ -n "$title" ]; then
+              case "$status" in
+                "passed")
+                  SCENARIOS_LIST="${SCENARIOS_LIST}\n- ✅ **PASSED**: $title"
+                  SCENARIOS_HTML="${SCENARIOS_HTML}<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:green;'>✅ PASSED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>"
+                  ;;
+                "failed"|"timedOut")
+                  SCENARIOS_LIST="${SCENARIOS_LIST}\n- ❌ **FAILED**: $title"
+                  SCENARIOS_HTML="${SCENARIOS_HTML}<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:red;'>❌ FAILED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>"
+                  ;;
+                "skipped")
+                  SCENARIOS_LIST="${SCENARIOS_LIST}\n- ⏭️ **SKIPPED**: $title"
+                  SCENARIOS_HTML="${SCENARIOS_HTML}<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:gray;'>⏭️ SKIPPED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>"
+                  ;;
+              esac
+            fi
+          done
+          
+          # Guardar en archivo temporal para usar en output
+          echo -e "$SCENARIOS_LIST" > /tmp/scenarios_list.txt
+          echo "$SCENARIOS_HTML" > /tmp/scenarios_html.txt
+          
+          # Crear tabla de resumen HTML para el email
           TABLE="<table style='border-collapse: collapse; width: 100%; margin: 20px 0;'>"
           TABLE="$TABLE<tr style='background-color: #f2f2f2;'>"
           TABLE="$TABLE<th style='border: 1px solid #ddd; padding: 12px;'>Total</th>"
@@ -164,7 +193,18 @@ jobs:
           TABLE="$TABLE<td style='border: 1px solid #ddd; padding: 12px; text-align: center;'><strong>$SKIPPED</strong></td>"
           TABLE="$TABLE</tr></table>"
           
+          # Agregar tabla de escenarios ejecutados para el email
+          SCENARIOS_TABLE="<h3 style='color:#333; margin-top: 20px;'>📋 Escenarios Ejecutados:</h3>"
+          SCENARIOS_TABLE="$SCENARIOS_TABLE<table style='border-collapse: collapse; width: 100%; margin: 20px 0;'>"
+          SCENARIOS_TABLE="$SCENARIOS_TABLE<tr style='background-color: #f2f2f2;'>"
+          SCENARIOS_TABLE="$SCENARIOS_TABLE<th style='border: 1px solid #ddd; padding: 12px; width: 150px;'>Estado</th>"
+          SCENARIOS_TABLE="$SCENARIOS_TABLE<th style='border: 1px solid #ddd; padding: 12px;'>Escenario</th>"
+          SCENARIOS_TABLE="$SCENARIOS_TABLE</tr>"
+          SCENARIOS_TABLE="$SCENARIOS_TABLE$(cat /tmp/scenarios_html.txt)"
+          SCENARIOS_TABLE="$SCENARIOS_TABLE</table>"
+          
           echo "table_html=$TABLE" >> $GITHUB_OUTPUT
+          echo "scenarios_table=$SCENARIOS_TABLE" >> $GITHUB_OUTPUT
           
           # Crear resumen para GitHub Actions
           echo "## 📊 Resultados de las Pruebas" >> $GITHUB_STEP_SUMMARY
@@ -175,6 +215,9 @@ jobs:
           echo "| ✅ Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
           echo "| ❌ Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
           echo "| ⏭️ Skipped | $SKIPPED |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Escenarios Ejecutados:" >> $GITHUB_STEP_SUMMARY
+          cat /tmp/scenarios_list.txt >> $GITHUB_STEP_SUMMARY
         else
           echo "⚠️ Archivo results.json no encontrado"
           echo "📂 Contenido de target/test-results:"
@@ -226,6 +269,8 @@ jobs:
             </p>
 
             ${{ steps.test_results.outputs.table_html }}
+
+            ${{ steps.test_results.outputs.scenarios_table }}
 
             <h3>📄 Reporte en vivo:</h3>
             <p>
