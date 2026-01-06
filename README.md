@@ -5,7 +5,18 @@ Codificación de framework base para pruebas automatizadas de frontend
 
 Accede a la plataforma completa en: **https://[tu-usuario].github.io/[tu-repo]/**
 
-### Características:
+### 📂 Estructura de URLs:
+- **Página Principal**: `https://[tu-usuario].github.io/[tu-repo]/`
+  - 🚀 Plataforma de ejecución de tests
+  - 📊 Visualización del historial
+  - 📈 Estadísticas y filtros
+  
+- **Reporte Playwright**: `https://[tu-usuario].github.io/[tu-repo]/report`
+  - 📄 Reporte HTML detallado de la última ejecución
+  - 🎥 Videos de los tests ejecutados
+  - 📸 Screenshots y traces
+
+### Características de la Plataforma:
 - ✅ **Ejecutar Pruebas**: Lanza pruebas directamente desde el navegador
 - 📊 **Historial Completo**: Ve todas las ejecuciones pasadas con detalles
 - 📈 **Estadísticas**: Total de ejecuciones, exitosas y fallidas
@@ -16,7 +27,8 @@ Accede a la plataforma completa en: **https://[tu-usuario].github.io/[tu-repo]/*
 1. Abre [test-launcher.html](test-launcher.html) líneas 409-410
 2. Cambia `GITHUB_OWNER` y `GITHUB_REPO` por tus datos
 3. Genera un [GitHub Token](https://github.com/settings/tokens/new?scopes=repo,workflow)
-4. ¡Listo! La página se publicará automáticamente en GitHub Pages
+4. Commit y push los cambios
+5. ¡Listo! La página se publicará automáticamente en GitHub Pages
 
 ---
 

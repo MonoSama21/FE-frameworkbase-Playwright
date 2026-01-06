@@ -172,14 +172,21 @@ jobs:
     - name: Preparar GitHub Pages con historial
       if: always()
       run: |
-        mkdir -p gh-pages
+        mkdir -p gh-pages/report
         
-        # Copiar reporte de Playwright
+        # Copiar reporte de Playwright al subdirectorio 'report'
         if [ -d "target/playwright-report" ]; then
-          cp -r target/playwright-report/* gh-pages/
-          echo "✅ Reporte de Playwright copiado"
+          cp -r target/playwright-report/* gh-pages/report/
+          echo "✅ Reporte de Playwright copiado a /report"
         else
-          echo "<h1>No se generó reporte</h1>" > gh-pages/index.html
+          mkdir -p gh-pages/report
+          echo "<h1>No se generó reporte</h1>" > gh-pages/report/index.html
+        fi
+        
+        # Copiar test-launcher.html como index.html (página principal)
+        if [ -f "test-launcher.html" ]; then
+          cp test-launcher.html gh-pages/index.html
+          echo "✅ Plataforma de testing configurada como página principal"
         fi
         
         # Crear/actualizar historial de ejecuciones
@@ -217,7 +224,7 @@ jobs:
           "commit": "${{ github.sha }}",
           "commitShort": "${GITHUB_SHA:0:7}",
           "actor": "${{ github.actor }}",
-          "reportUrl": "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/",
+          "reportUrl": "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report",
           "actionsUrl": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         }
         EOF
@@ -228,12 +235,8 @@ jobs:
         mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
         
         echo "✅ Historial actualizado"
-        
-        # Copiar launcher con historial
-        if [ -f "test-launcher.html" ]; then
-          cp test-launcher.html gh-pages/launcher.html
-          echo "✅ Test launcher copiado"
-        fi
+        echo "📂 Estructura de GitHub Pages:"
+        ls -la gh-pages/
     
     # =========================================================
     # 📊 EXTRAER RESULTADOS DEL REPORTE JSON DE PLAYWRIGHT
@@ -357,7 +360,7 @@ jobs:
           echo "table_html=<p style='color: orange;'>⚠️ No se encontró el archivo de resultados JSON</p>" >> $GITHUB_OUTPUT
           echo "⚠️ No se pudo generar el resumen de resultados" >> $GITHUB_STEP_SUMMARY
         fi
-        
+
     - name: Deploy to GitHub Pages
       if: always()
       uses: peaceiris/actions-gh-pages@v3
@@ -442,8 +445,13 @@ jobs:
                           <p style="color: #64748b; font-size: 14px; margin: 0 0 20px 0; font-weight: 500;">📄 Recursos Disponibles</p>
                           
                           <a href="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" 
+                             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; font-weight: 600; font-size: 14px; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);">
+                            🚀 Plataforma de Testing
+                          </a>
+                          
+                          <a href="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report" 
                              style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; font-weight: 600; font-size: 14px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
-                            🌐 Ver Reporte Completo
+                            📊 Ver Reporte HTML
                           </a>
                           
                           <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" 
