@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIASIS - Test Launcher Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #334155;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group small {
+            display: block;
+            color: #64748b;
+            margin-top: 6px;
+            font-size: 13px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .alert.success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 2px solid #86efac;
+        }
+
+        .alert.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #fca5a5;
+        }
+
+        .alert.info {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #93c5fd;
+        }
+
+        .quick-tags {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .quick-tag {
+            padding: 8px 12px;
+            background-color: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .quick-tag:hover {
+            background-color: #e0e7ff;
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .quick-tag.active {
+            background-color: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+
+        .footer {
+            background-color: #f8fafc;
+            padding: 20px 40px;
+            text-align: center;
+            color: #64748b;
+            font-size: 13px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .loader {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .help-text {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 14px;
+            color: #92400e;
+        }
+
+        .help-text strong {
+            color: #78350f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">🚀</div>
+            <h1>SIASIS Test Launcher</h1>
+            <p>Plataforma de Ejecución de Pruebas Automatizadas</p>
+        </div>
+
+        <div class="form-container">
+            <div id="alertBox" class="alert"></div>
+
+            <div class="help-text">
+                <strong>📌 Nota:</strong> Necesitas un GitHub Personal Access Token con permisos <code>repo</code> y <code>workflow</code> para ejecutar las pruebas.
+            </div>
+
+            <form id="testForm">
+                <div class="form-group">
+                    <label for="githubToken">🔑 GitHub Personal Access Token *</label>
+                    <input 
+                        type="password" 
+                        id="githubToken" 
+                        name="githubToken" 
+                        placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                        required
+                    >
+                    <small>
+                        <a href="https://github.com/settings/tokens/new?scopes=repo,workflow" target="_blank" style="color: #667eea;">
+                            ➜ Generar nuevo token aquí
+                        </a>
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="tag">🏷️ Tag de Escenario *</label>
+                    <input 
+                        type="text" 
+                        id="tag" 
+                        name="tag" 
+                        placeholder="@test"
+                        value="@test"
+                        required
+                    >
+                    <small>Tags populares (click para seleccionar):</small>
+                    <div class="quick-tags">
+                        <div class="quick-tag" onclick="selectTag('@test')">@test</div>
+                        <div class="quick-tag" onclick="selectTag('@DailyTest')">@DailyTest</div>
+                        <div class="quick-tag" onclick="selectTag('@Escenario37')">@Escenario37</div>
+                        <div class="quick-tag" onclick="selectTag('@HU-2')">@HU-2</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">📧 Correo de Notificación *</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        placeholder="tu-correo@ejemplo.com"
+                        value="2101010261@undc.edu.pe"
+                        required
+                    >
+                    <small>Recibirás los resultados de las pruebas en este correo</small>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">
+                    🚀 Ejecutar Pruebas Automatizadas
+                </button>
+            </form>
+        </div>
+
+        <div class="footer">
+            <strong>QA Automation SSr Yrvin Pachas</strong><br>
+            Sistema de Testing Continuo - SIASIS<br>
+            🤖 Powered by GitHub Actions
+        </div>
+    </div>
+
+    <script>
+        const GITHUB_OWNER = 'MonoSama21'; // 👈 Cambia por tu usuario de GitHub
+        const GITHUB_REPO = 'FE-frameworkbase-Playwright'; // 👈 Cambia por el nombre de tu repo
+        const WORKFLOW_ID = 'test-integracion.yml';
+
+        function selectTag(tag) {
+            document.getElementById('tag').value = tag;
+            
+            // Actualizar estilos visuales
+            document.querySelectorAll('.quick-tag').forEach(el => {
+                el.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = `alert ${type}`;
+            alertBox.style.display = 'block';
+            
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 8000);
+        }
+
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            // Deshabilitar botón y mostrar loader
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loader"></span>Ejecutando pruebas...';
+            
+            const token = document.getElementById('githubToken').value.trim();
+            const tag = document.getElementById('tag').value.trim();
+            const email = document.getElementById('email').value.trim();
+            
+            try {
+                const response = await fetch(
+                    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/workflows/${WORKFLOW_ID}/dispatches`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Authorization': `token ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ref: 'main', // 👈 Cambia a 'develop' si usas esa rama
+                            inputs: {
+                                tag: tag,
+                                correo: email
+                            }
+                        })
+                    }
+                );
+                
+                if (response.status === 204) {
+                    showAlert('✅ ¡Pruebas ejecutadas exitosamente! Recibirás un correo cuando finalicen.', 'success');
+                    
+                    // Abrir GitHub Actions
+                    setTimeout(() => {
+                        window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions`, '_blank');
+                    }, 2000);
+                } else if (response.status === 401) {
+                    showAlert('❌ Token inválido o sin permisos. Verifica tu GitHub Token.', 'error');
+                } else if (response.status === 404) {
+                    showAlert('❌ Workflow no encontrado. Verifica el nombre del repositorio.', 'error');
+                } else {
+                    const errorData = await response.json();
+                    showAlert(`❌ Error: ${errorData.message || 'Error desconocido'}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`❌ Error de conexión: ${error.message}`, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+
+        // Guardar token en localStorage (opcional)
+        document.getElementById('githubToken').addEventListener('change', (e) => {
+            if (e.target.value && confirm('¿Deseas guardar el token localmente para futuras ejecuciones?')) {
+                localStorage.setItem('githubToken', e.target.value);
+            }
+        });
+
+        // Cargar token guardado
+        window.addEventListener('load', () => {
+            const savedToken = localStorage.getItem('githubToken');
+            if (savedToken) {
+                document.getElementById('githubToken').value = savedToken;
+                showAlert('ℹ️ Token cargado desde el almacenamiento local.', 'info');
+            }
+        });
+    </script>
+</body>
+</html>

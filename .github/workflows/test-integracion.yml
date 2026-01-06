@@ -71,14 +71,76 @@ jobs:
         to: ${{ steps.params.outputs.correo }}
         from: ${{ secrets.MAIL_USERNAME }}
         html_body: |
-          <div style="font-family: Arial; padding: 20px;">
-            <h2 style="color:#007bff;">🔵 Ejecución iniciada</h2>
-            <p>Las pruebas de integración han comenzado.</p>
-            <p><strong>Tag ejecutado:</strong> <span style="color:#007bff;">${{ steps.params.outputs.tag }}</span></p>
-          
-            <br>
-            <p>Saludos,<br><strong>QA Automation Semisenior Yrvin Pachas</strong></p>
-          </div>
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f4f7fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7fa; padding: 40px 0;">
+              <tr>
+                <td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 40px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">🚀 Pruebas Iniciadas</h1>
+                        <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 14px;">Sistema de Testing Continuo - SIASIS</p>
+                      </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                      <td style="padding: 40px;">
+                        <div style="background-color: #f8f9ff; border-left: 4px solid #667eea; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                          <p style="margin: 0; font-size: 16px; color: #334155;">⚡ Las pruebas automatizadas han comenzado su ejecución.</p>
+                        </div>
+                        
+                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
+                          <tr>
+                            <td style="padding: 15px 0; border-bottom: 1px solid #e2e8f0;">
+                              <span style="color: #64748b; font-size: 14px; font-weight: 500;">📋 Tag Ejecutado</span><br>
+                              <span style="color: #667eea; font-size: 18px; font-weight: 600; margin-top: 5px; display: inline-block;">${{ steps.params.outputs.tag }}</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 15px 0; border-bottom: 1px solid #e2e8f0;">
+                              <span style="color: #64748b; font-size: 14px; font-weight: 500;">⏱️ Hora de Inicio</span><br>
+                              <span style="color: #1e293b; font-size: 16px; margin-top: 5px; display: inline-block;">${{ github.event.repository.updated_at }}</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 15px 0;">
+                              <span style="color: #64748b; font-size: 14px; font-weight: 500;">🔗 Build Number</span><br>
+                              <span style="color: #1e293b; font-size: 16px; margin-top: 5px; display: inline-block;">#${{ github.run_number }}</span>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                          <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" 
+                             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);">
+                            🔍 Ver Ejecución en Tiempo Real
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f8fafc; padding: 25px 40px; border-top: 1px solid #e2e8f0;">
+                        <p style="color: #64748b; font-size: 13px; margin: 0; line-height: 1.6;">
+                          <strong style="color: #1e293b;">QA Automation SSr Yrvin Pachas</strong><br>
+                          Testing Continuo - SIASIS Platform<br>
+                          🤖 Mensaje automático del sistema de CI/CD
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
 
     - name: Install dependencies
       run: npm ci
@@ -266,43 +328,104 @@ jobs:
         to: ${{ steps.params.outputs.correo }}
         from: ${{ secrets.MAIL_USERNAME }}
         html_body: |
-          <div style="font-family: Arial; padding: 20px;">
-            <img src="https://res.cloudinary.com/dvrsdqsl1/image/upload/v1764399269/Blue_Minimalist_Technology_Cube_Logo_1_x445ab.png" width="180">
-
-            <h2 style="color:#28a745;">🟢 Pruebas Finalizadas</h2>
-
-            <p><strong>Tag ejecutado:</strong> 
-              <span style="color:#28a745;">${{ steps.params.outputs.tag }}</span>
-            </p>
-
-            <h3 style="color:#333;">📊 Resultado General:</h3>
-            <p>
-              Estado: 
-              <strong style="color:${{ steps.run_tests.outputs.resultado == '0' && 'green' || 'red' }};">
-                ${{ steps.run_tests.outputs.resultado == '0' && 'PASSED' || 'FAILED' }}
-              </strong>
-            </p>
-
-            ${{ steps.test_results.outputs.table_html }}
-
-            ${{ steps.test_results.outputs.scenarios_table }}
-
-            <h3>📄 Reporte en vivo:</h3>
-            <p>
-              🌐 <a href="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" 
-              style="color:#007bff; font-size: 18px; font-weight: bold;">Ver Reporte HTML Completo</a>
-            </p>
-
-            <p>
-              🔗 <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" 
-              style="color:#007bff;">Ver ejecución en GitHub Actions</a>
-            </p>
-            
-            <p>
-              📦 <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" 
-              style="color:#007bff;">Descargar artefactos (con videos)</a>
-            </p>
-
-            <br>
-            <p>Saludos,<br><strong>QA Automation Semisenior Yrvin Pachas</strong></p>
-          </div>
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f4f7fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7fa; padding: 40px 0;">
+              <tr>
+                <td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                      <td style="background: ${{ steps.run_tests.outputs.resultado == '0' && 'linear-gradient(135deg, #10b981 0%, #059669 100%)' || 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}; padding: 30px 40px; text-align: center;">
+                        <img src="https://res.cloudinary.com/dvrsdqsl1/image/upload/v1764399269/Blue_Minimalist_Technology_Cube_Logo_1_x445ab.png" width="120" style="margin-bottom: 15px;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">
+                          ${{ steps.run_tests.outputs.resultado == '0' && '✅ Pruebas Exitosas' || '❌ Pruebas con Fallos' }}
+                        </h1>
+                        <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 14px;">Reporte de Ejecución - SIASIS Testing</p>
+                      </td>
+                    </tr>
+                    <!-- Status Badge -->
+                    <tr>
+                      <td style="padding: 30px 40px 20px;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                          <span style="background-color: ${{ steps.run_tests.outputs.resultado == '0' && '#dcfce7' || '#fee2e2' }}; color: ${{ steps.run_tests.outputs.resultado == '0' && '#166534' || '#991b1b' }}; padding: 12px 24px; border-radius: 20px; font-weight: 600; font-size: 16px; display: inline-block;">
+                            Estado: ${{ steps.run_tests.outputs.resultado == '0' && 'PASSED ✓' || 'FAILED ✗' }}
+                          </span>
+                        </div>
+                        
+                        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px;">
+                          <tr>
+                            <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                              <span style="color: #64748b; font-size: 14px;">📋 Tag Ejecutado</span><br>
+                              <span style="color: #1e293b; font-size: 16px; font-weight: 600; margin-top: 5px; display: inline-block;">${{ steps.params.outputs.tag }}</span>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <!-- Results Table -->
+                    <tr>
+                      <td style="padding: 0 40px 20px;">
+                        <h3 style="color: #1e293b; font-size: 18px; margin: 0 0 15px 0; font-weight: 600;">📊 Resumen de Resultados</h3>
+                        ${{ steps.test_results.outputs.table_html }}
+                      </td>
+                    </tr>
+                    <!-- Scenarios -->
+                    <tr>
+                      <td style="padding: 0 40px 30px;">
+                        ${{ steps.test_results.outputs.scenarios_table }}
+                      </td>
+                    </tr>
+                    <!-- Action Buttons -->
+                    <tr>
+                      <td style="padding: 0 40px 30px;">
+                        <div style="background-color: #f8fafc; border-radius: 8px; padding: 25px; text-align: center;">
+                          <p style="color: #64748b; font-size: 14px; margin: 0 0 20px 0; font-weight: 500;">📄 Recursos Disponibles</p>
+                          
+                          <a href="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" 
+                             style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; font-weight: 600; font-size: 14px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
+                            🌐 Ver Reporte Completo
+                          </a>
+                          
+                          <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" 
+                             style="background-color: #64748b; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; font-weight: 600; font-size: 14px;">
+                            🔗 Ver en GitHub Actions
+                          </a>
+                          
+                          <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" 
+                             style="background-color: #8b5cf6; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 5px; font-weight: 600; font-size: 14px;">
+                            📦 Descargar Videos
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                      <td style="background-color: #f8fafc; padding: 25px 40px; border-top: 1px solid #e2e8f0;">
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td>
+                              <p style="color: #64748b; font-size: 13px; margin: 0; line-height: 1.6;">
+                                <strong style="color: #1e293b;">QA Automation SSr Yrvin Pachas</strong><br>
+                                Testing Continuo - SIASIS Platform<br>
+                                Build #${{ github.run_number }} • Branch: ${{ github.ref_name }}
+                              </p>
+                            </td>
+                            <td align="right">
+                              <span style="color: #94a3b8; font-size: 24px;">🤖</span>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
