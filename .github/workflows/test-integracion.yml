@@ -169,16 +169,70 @@ jobs:
     # =========================================================
     # 🌐 DESPLEGAR REPORTE EN GITHUB PAGES
     # =========================================================
-    - name: Preparar reporte de Playwright para GitHub Pages
+    - name: Preparar GitHub Pages con historial
       if: always()
       run: |
         mkdir -p gh-pages
+        
+        # Copiar reporte de Playwright
         if [ -d "target/playwright-report" ]; then
           cp -r target/playwright-report/* gh-pages/
-          echo "✅ Reporte de Playwright copiado a gh-pages"
+          echo "✅ Reporte de Playwright copiado"
         else
-          echo "⚠️ No se encontró el reporte de Playwright"
           echo "<h1>No se generó reporte</h1>" > gh-pages/index.html
+        fi
+        
+        # Crear/actualizar historial de ejecuciones
+        HISTORY_FILE="gh-pages/history.json"
+        
+        # Si no existe el archivo, crear array vacío
+        if [ ! -f "$HISTORY_FILE" ]; then
+          echo "[]" > "$HISTORY_FILE"
+        fi
+        
+        # Extraer datos de esta ejecución
+        PASSED=$(jq '[.suites[]?.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "passed")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+        FAILED=$(jq '[.suites[]?.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "failed" or .results[]?.status == "timedOut")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+        SKIPPED=$(jq '[.suites[]?.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "skipped")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+        TOTAL=$((PASSED + FAILED + SKIPPED))
+        
+        # Obtener duración total
+        DURATION=$(jq '[.suites[]?.suites[]?.specs[]?.tests[]?.results[]?.duration // 0] | add / 1000' target/test-results/results.json 2>/dev/null || echo "0")
+        
+        # Crear objeto JSON de esta ejecución
+        EXECUTION_DATA=$(cat <<EOF
+        {
+          "id": "${{ github.run_id }}",
+          "runNumber": ${{ github.run_number }},
+          "tag": "${{ steps.params.outputs.tag }}",
+          "date": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+          "dateFormatted": "$(date +"%d/%m/%Y %H:%M")",
+          "total": $TOTAL,
+          "passed": $PASSED,
+          "failed": $FAILED,
+          "skipped": $SKIPPED,
+          "duration": $DURATION,
+          "status": "${{ steps.run_tests.outputs.resultado == '0' && 'passed' || 'failed' }}",
+          "branch": "${{ github.ref_name }}",
+          "commit": "${{ github.sha }}",
+          "commitShort": "${GITHUB_SHA:0:7}",
+          "actor": "${{ github.actor }}",
+          "reportUrl": "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/",
+          "actionsUrl": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        }
+        EOF
+        )
+        
+        # Agregar al historial (mantener últimas 50 ejecuciones)
+        jq --argjson new "$EXECUTION_DATA" '. = [$new] + . | .[0:50]' "$HISTORY_FILE" > "${HISTORY_FILE}.tmp"
+        mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
+        
+        echo "✅ Historial actualizado"
+        
+        # Copiar launcher con historial
+        if [ -f "test-launcher.html" ]; then
+          cp test-launcher.html gh-pages/launcher.html
+          echo "✅ Test launcher copiado"
         fi
     
     # =========================================================
