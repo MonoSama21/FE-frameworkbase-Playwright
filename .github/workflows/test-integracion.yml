@@ -69,7 +69,7 @@ jobs:
         password: ${{ secrets.MAIL_PASSWORD }}
         subject: "🔵 Pruebas iniciadas - FrontEnd Integración"
         to: ${{ steps.params.outputs.correo }}
-        from: ${{ secrets.MAIL_FROM }}
+        from: ${{ secrets.MAIL_USERNAME }}
         html_body: |
           <div style="font-family: Arial; padding: 20px;">
             <h2 style="color:#007bff;">🔵 Ejecución iniciada</h2>
@@ -185,7 +185,7 @@ jobs:
         password: ${{ secrets.MAIL_PASSWORD }}
         subject: "🟢 Pruebas finalizadas - FrontEnd Integración"
         to: ${{ steps.params.outputs.correo }}
-        from: ${{ secrets.MAIL_FROM }}
+        from: ${{ secrets.MAIL_USERNAME }}
         html_body: |
           <div style="font-family: Arial; padding: 20px;">
             <img src="https://res.cloudinary.com/dvrsdqsl1/image/upload/v1764399269/Blue_Minimalist_Technology_Cube_Logo_1_x445ab.png" width="180">
