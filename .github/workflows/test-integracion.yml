@@ -1,0 +1,227 @@
+name: FrontEnd Test - Integracion
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Ingrese el nombre del tag del escenario
+        required: true
+        type: string
+        default: "@test"
+      correo:
+        description: Ingrese el correo donde llegará la notificación
+        required: true
+        type: string
+        default: "2101010261@undc.edu.pe"
+        
+  schedule:
+    # Lunes a Viernes 8 AM — Tag diario
+    - cron: "0 13 * * 1-5"   # 13 UTC = 8AM Perú
+    # Sábado y Domingo 7 PM — Tag de fin de semana
+    - cron: "0 6 * * 6,0"    # 00 UTC = 1:00AM Perú
+
+jobs:
+  Pruebas-FrontEnd-Integracion:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 👈 Permiso para hacer push a gh-pages
+      pages: write     # 👈 Permiso para desplegar en GitHub Pages
+      id-token: write  # 👈 Permiso para autenticación
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+
+    # =========================================================
+    # 📌 ASIGNAR TAG Y CORREO SEGÚN EL TIPO DE DISPARO
+    # =========================================================
+    - name: Detectar parámetros para ejecución automática o manual
+      id: params
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          echo "correo=${{ github.event.inputs.correo }}" >> $GITHUB_OUTPUT
+        else
+          # Lunes a Viernes
+          if [[ $(date +%u) -lt 6 ]]; then
+            echo "tag=@DailyTest" >> $GITHUB_OUTPUT
+            echo "correo=2101010261@undc.edu.pe" >> $GITHUB_OUTPUT
+          else
+            # Sábado y domingo
+            echo "tag=@WeekendTest" >> $GITHUB_OUTPUT
+            echo "correo=2101010261@undc.edu.pe" >> $GITHUB_OUTPUT
+          fi
+        fi
+
+    # =========================================================
+    # CORREO INICIAL (HTML)
+    # =========================================================
+    - name: Notificar inicio de ejecución
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: ${{ secrets.MAIL_SERVER }}
+        server_port: ${{ secrets.MAIL_PORT }}
+        username: ${{ secrets.MAIL_USERNAME }}
+        password: ${{ secrets.MAIL_PASSWORD }}
+        subject: "🔵 Pruebas iniciadas - FrontEnd Integración"
+        to: ${{ steps.params.outputs.correo }}
+        from: ${{ secrets.MAIL_FROM }}
+        html_body: |
+          <div style="font-family: Arial; padding: 20px;">
+            <h2 style="color:#007bff;">🔵 Ejecución iniciada</h2>
+            <p>Las pruebas de integración han comenzado.</p>
+            <p><strong>Tag ejecutado:</strong> <span style="color:#007bff;">${{ steps.params.outputs.tag }}</span></p>
+          
+            <br>
+            <p>Saludos,<br><strong>QA Automation Semisenior Yrvin Pachas</strong></p>
+          </div>
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+
+    - name: Run Playwright tests by tag
+      id: run_tests
+      run: |
+        npm test -- --grep "${{ steps.params.outputs.tag }}"
+        echo "resultado=$?" >> $GITHUB_OUTPUT
+      continue-on-error: true
+
+    - name: List target directory
+      run: ls -R target
+
+    # Subir artefacto completo (con videos y traces) a GitHub Actions
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: target/
+        retention-days: 30
+
+    # =========================================================
+    # 🌐 DESPLEGAR REPORTE EN GITHUB PAGES
+    # =========================================================
+    - name: Preparar reporte de Playwright para GitHub Pages
+      if: always()
+      run: |
+        mkdir -p gh-pages
+        if [ -d "target/playwright-report" ]; then
+          cp -r target/playwright-report/* gh-pages/
+          echo "✅ Reporte de Playwright copiado a gh-pages"
+        else
+          echo "⚠️ No se encontró el reporte de Playwright"
+          echo "<h1>No se generó reporte</h1>" > gh-pages/index.html
+        fi
+    
+    # =========================================================
+    # 📊 EXTRAER RESULTADOS DEL REPORTE JSON DE PLAYWRIGHT
+    # =========================================================
+    - name: Extraer resultados de Playwright
+      if: always()
+      id: test_results
+      run: |
+        if [ -f "target/test-results/results.json" ]; then
+          # Extraer estadísticas del JSON de Playwright
+          PASSED=$(jq '[.suites[].specs[].tests[] | select(.status=="expected")] | length' target/test-results/results.json)
+          FAILED=$(jq '[.suites[].specs[].tests[] | select(.status=="unexpected")] | length' target/test-results/results.json)
+          SKIPPED=$(jq '[.suites[].specs[].tests[] | select(.status=="skipped")] | length' target/test-results/results.json)
+          TOTAL=$((PASSED + FAILED + SKIPPED))
+          
+          # Crear tabla HTML para el email
+          TABLE="<table style='border-collapse: collapse; width: 100%; margin: 20px 0;'>"
+          TABLE="$TABLE<tr style='background-color: #f2f2f2;'>"
+          TABLE="$TABLE<th style='border: 1px solid #ddd; padding: 12px;'>Total</th>"
+          TABLE="$TABLE<th style='border: 1px solid #ddd; padding: 12px; color: green;'>✅ Passed</th>"
+          TABLE="$TABLE<th style='border: 1px solid #ddd; padding: 12px; color: red;'>❌ Failed</th>"
+          TABLE="$TABLE<th style='border: 1px solid #ddd; padding: 12px; color: gray;'>⏭️ Skipped</th>"
+          TABLE="$TABLE</tr><tr>"
+          TABLE="$TABLE<td style='border: 1px solid #ddd; padding: 12px; text-align: center;'><strong>$TOTAL</strong></td>"
+          TABLE="$TABLE<td style='border: 1px solid #ddd; padding: 12px; text-align: center;'><strong>$PASSED</strong></td>"
+          TABLE="$TABLE<td style='border: 1px solid #ddd; padding: 12px; text-align: center;'><strong>$FAILED</strong></td>"
+          TABLE="$TABLE<td style='border: 1px solid #ddd; padding: 12px; text-align: center;'><strong>$SKIPPED</strong></td>"
+          TABLE="$TABLE</tr></table>"
+          
+          echo "table_html=$TABLE" >> $GITHUB_OUTPUT
+          
+          # Crear resumen para GitHub Actions
+          echo "## 📊 Resultados de las Pruebas" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Métrica | Cantidad |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📝 Total | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| ✅ Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
+          echo "| ❌ Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
+          echo "| ⏭️ Skipped | $SKIPPED |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "table_html=<p style='color: orange;'>⚠️ No se encontró el archivo de resultados JSON</p>" >> $GITHUB_OUTPUT
+          echo "⚠️ No se pudo generar el resumen de resultados" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+    - name: Deploy to GitHub Pages
+      if: always()
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./gh-pages
+        publish_branch: gh-pages
+        force_orphan: true
+
+    # =========================================================
+    # 📧 CORREO FINAL CON TABLA DE RESULTADOS Y LINK
+    # =========================================================
+    - name: Notificar fin de ejecución con tabla de resultados
+      if: always()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: ${{ secrets.MAIL_SERVER }}
+        server_port: ${{ secrets.MAIL_PORT }}
+        username: ${{ secrets.MAIL_USERNAME }}
+        password: ${{ secrets.MAIL_PASSWORD }}
+        subject: "🟢 Pruebas finalizadas - FrontEnd Integración"
+        to: ${{ steps.params.outputs.correo }}
+        from: ${{ secrets.MAIL_FROM }}
+        html_body: |
+          <div style="font-family: Arial; padding: 20px;">
+            <img src="https://res.cloudinary.com/dvrsdqsl1/image/upload/v1764399269/Blue_Minimalist_Technology_Cube_Logo_1_x445ab.png" width="180">
+
+            <h2 style="color:#28a745;">🟢 Pruebas Finalizadas</h2>
+
+            <p><strong>Tag ejecutado:</strong> 
+              <span style="color:#28a745;">${{ steps.params.outputs.tag }}</span>
+            </p>
+
+            <h3 style="color:#333;">📊 Resultado General:</h3>
+            <p>
+              Estado: 
+              <strong style="color:${{ steps.run_tests.outputs.resultado == '0' && 'green' || 'red' }};">
+                ${{ steps.run_tests.outputs.resultado == '0' && 'PASSED' || 'FAILED' }}
+              </strong>
+            </p>
+
+            ${{ steps.test_results.outputs.table_html }}
+
+            <h3>📄 Reporte en vivo:</h3>
+            <p>
+              🌐 <a href="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" 
+              style="color:#007bff; font-size: 18px; font-weight: bold;">Ver Reporte HTML Completo</a>
+            </p>
+
+            <p>
+              🔗 <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" 
+              style="color:#007bff;">Ver ejecución en GitHub Actions</a>
+            </p>
+            
+            <p>
+              📦 <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" 
+              style="color:#007bff;">Descargar artefactos (con videos)</a>
+            </p>
+
+            <br>
+            <p>Saludos,<br><strong>QA Automation Semisenior Yrvin Pachas</strong></p>
+          </div>
