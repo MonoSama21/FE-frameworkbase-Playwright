@@ -15,8 +15,7 @@ export default defineConfig({
   reporter: [
     ['list', { printSteps: true }],
     ['html', { outputFolder: './target/playwright-report', open: 'always' }],
-    ['json', { outputFile: './target/test-results/results.json' }],
-    cucumberReporter('html', { outputFile: './target/cucumber-report/report.html' })
+    ['json', { outputFile: './target/test-results/results.json' }]
   ],
   use: {
     trace: 'retain-on-failure',
