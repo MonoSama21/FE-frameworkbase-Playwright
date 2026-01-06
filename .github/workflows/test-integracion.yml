@@ -132,10 +132,10 @@ jobs:
           jq '.suites' target/test-results/results.json | head -200
           echo "================================"
           
-          # Extraer estadísticas usando diferentes métodos según la estructura
-          PASSED=$(jq '[.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "passed")] | length' target/test-results/results.json 2>/dev/null || echo "0")
-          FAILED=$(jq '[.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "failed" or .results[]?.status == "timedOut")] | length' target/test-results/results.json 2>/dev/null || echo "0")
-          SKIPPED=$(jq '[.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "skipped")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          # Extraer estadísticas usando la estructura correcta (suites anidados)
+          PASSED=$(jq '[.suites[]?.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "passed")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          FAILED=$(jq '[.suites[]?.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "failed" or .results[]?.status == "timedOut")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          SKIPPED=$(jq '[.suites[]?.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "skipped")] | length' target/test-results/results.json 2>/dev/null || echo "0")
           
           # Si no hay datos, intentar estructura alternativa
           if [ "$PASSED" == "0" ] && [ "$FAILED" == "0" ] && [ "$SKIPPED" == "0" ]; then
@@ -151,16 +151,15 @@ jobs:
           echo "⏭️ SKIPPED: $SKIPPED"
           echo "📝 TOTAL: $TOTAL"
           
-          # Extraer nombres de escenarios y sus estados de forma robusta
+          # Extraer nombres de escenarios y sus estados
           echo "📝 Extrayendo detalles de escenarios..."
           
           # Crear archivos temporales
           > /tmp/scenarios_list.txt
           > /tmp/scenarios_html.txt
           
-          # Método 1: Extracción estándar de Playwright
-          echo "Intentando método 1..."
-          jq -r '.suites[]?.specs[]?.tests[]? | "\(.title)|\(.results[0]?.status // "unknown")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
+          # Usar la estructura correcta: suites[].suites[].specs[]
+          jq -r '.suites[]?.suites[]?.specs[]? | "\(.title)|\(.tests[0]?.results[0]?.status // "unknown")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
             if [ -n "$title" ] && [ "$title" != "null" ] && [ "$title" != "" ]; then
               echo "  ✓ Encontrado: $title - $status"
               case "$status" in
@@ -180,55 +179,10 @@ jobs:
             fi
           done
           
-          # Verificar si se capturaron escenarios con método 1
+          # Verificar si se capturaron escenarios
           if [ ! -s /tmp/scenarios_html.txt ]; then
-            echo "Método 1 falló. Intentando método 2 (estructura alternativa)..."
-            # Método 2: Buscar cualquier objeto con title y status
-            jq -r '.. | objects | select(.title? and .status?) | "\(.title)|\(.status)"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
-              if [ -n "$title" ] && [ "$title" != "null" ]; then
-                echo "  ✓ Encontrado (método 2): $title - $status"
-                case "$status" in
-                  "passed"|"expected")
-                    echo "- ✅ **PASSED**: $title" >> /tmp/scenarios_list.txt
-                    echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:green; font-weight: bold;'>✅ PASSED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
-                    ;;
-                  "failed"|"unexpected"|"timedOut")
-                    echo "- ❌ **FAILED**: $title" >> /tmp/scenarios_list.txt
-                    echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:red; font-weight: bold;'>❌ FAILED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
-                    ;;
-                  "skipped")
-                    echo "- ⏭️ **SKIPPED**: $title" >> /tmp/scenarios_list.txt
-                    echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:gray; font-weight: bold;'>⏭️ SKIPPED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
-                    ;;
-                esac
-              fi
-            done
-          fi
-          
-          # Último recurso: usar los títulos de specs
-          if [ ! -s /tmp/scenarios_html.txt ]; then
-            echo "Método 2 falló. Usando specs como fallback..."
-            jq -r '.suites[]?.specs[]? | "\(.title)|\(.tests[0]?.results[0]?.status // "passed")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
-              if [ -n "$title" ] && [ "$title" != "null" ]; then
-                echo "  ✓ Encontrado (specs): $title - $status"
-                case "$status" in
-                  "passed")
-                    echo "- ✅ **PASSED**: $title" >> /tmp/scenarios_list.txt
-                    echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:green; font-weight: bold;'>✅ PASSED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
-                    ;;
-                  *)
-                    echo "- ❌ **FAILED**: $title" >> /tmp/scenarios_list.txt
-                    echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:red; font-weight: bold;'>❌ FAILED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
-                    ;;
-                esac
-              fi
-            done
-          fi
-          
-          # Verificar si finalmente se capturaron escenarios
-          if [ ! -s /tmp/scenarios_html.txt ]; then
-            echo "⚠️ Todos los métodos fallaron"
-            echo "<tr><td colspan='2' style='border: 1px solid #ddd; padding: 10px; text-align: center; color: orange;'>⚠️ No se pudieron extraer los nombres de los escenarios del JSON</td></tr>" > /tmp/scenarios_html.txt
+            echo "⚠️ No se pudieron extraer escenarios"
+            echo "<tr><td colspan='2' style='border: 1px solid #ddd; padding: 10px; text-align: center; color: orange;'>⚠️ No se pudieron extraer los nombres de los escenarios</td></tr>" > /tmp/scenarios_html.txt
             echo "- ⚠️ No se pudieron extraer los nombres de los escenarios" > /tmp/scenarios_list.txt
           else
             echo "✅ Escenarios extraídos correctamente"
