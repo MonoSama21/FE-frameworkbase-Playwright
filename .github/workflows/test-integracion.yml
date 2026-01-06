@@ -150,34 +150,48 @@ jobs:
           echo "⏭️ SKIPPED: $SKIPPED"
           echo "📝 TOTAL: $TOTAL"
           
-          # Extraer nombres de escenarios y sus estados
+          # Extraer nombres de escenarios y sus estados de forma robusta
           echo "📝 Extrayendo detalles de escenarios..."
-          SCENARIOS_LIST=""
-          SCENARIOS_HTML=""
           
-          # Iterar sobre los tests y extraer título + status
-          jq -r '.suites[]?.specs[]?.tests[]? | "\(.title)|\(.results[]?.status)"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
-            if [ -n "$title" ]; then
+          # Crear archivos temporales
+          > /tmp/scenarios_list.txt
+          > /tmp/scenarios_html.txt
+          
+          # Extraer escenarios usando jq de manera más robusta
+          jq -r '
+            .suites[]? | 
+            .specs[]? | 
+            .tests[]? | 
+            {
+              title: .title, 
+              status: (.results[]?.status // "unknown")
+            } | 
+            "\(.title)|\(.status)"
+          ' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
+            if [ -n "$title" ] && [ "$title" != "null" ]; then
+              echo "  -> Escenario: $title - Estado: $status"
               case "$status" in
                 "passed")
-                  SCENARIOS_LIST="${SCENARIOS_LIST}\n- ✅ **PASSED**: $title"
-                  SCENARIOS_HTML="${SCENARIOS_HTML}<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:green;'>✅ PASSED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>"
+                  echo "- ✅ **PASSED**: $title" >> /tmp/scenarios_list.txt
+                  echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:green; font-weight: bold;'>✅ PASSED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
                   ;;
                 "failed"|"timedOut")
-                  SCENARIOS_LIST="${SCENARIOS_LIST}\n- ❌ **FAILED**: $title"
-                  SCENARIOS_HTML="${SCENARIOS_HTML}<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:red;'>❌ FAILED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>"
+                  echo "- ❌ **FAILED**: $title" >> /tmp/scenarios_list.txt
+                  echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:red; font-weight: bold;'>❌ FAILED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
                   ;;
                 "skipped")
-                  SCENARIOS_LIST="${SCENARIOS_LIST}\n- ⏭️ **SKIPPED**: $title"
-                  SCENARIOS_HTML="${SCENARIOS_HTML}<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:gray;'>⏭️ SKIPPED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>"
+                  echo "- ⏭️ **SKIPPED**: $title" >> /tmp/scenarios_list.txt
+                  echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:gray; font-weight: bold;'>⏭️ SKIPPED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
                   ;;
               esac
             fi
           done
           
-          # Guardar en archivo temporal para usar en output
-          echo -e "$SCENARIOS_LIST" > /tmp/scenarios_list.txt
-          echo "$SCENARIOS_HTML" > /tmp/scenarios_html.txt
+          # Verificar si se capturaron escenarios
+          if [ ! -s /tmp/scenarios_html.txt ]; then
+            echo "<tr><td colspan='2' style='border: 1px solid #ddd; padding: 10px; text-align: center; color: gray;'>No se pudieron extraer los nombres de los escenarios</td></tr>" > /tmp/scenarios_html.txt
+            echo "- ⚠️ No se pudieron extraer los nombres de los escenarios" > /tmp/scenarios_list.txt
+          fi
           
           # Crear tabla de resumen HTML para el email
           TABLE="<table style='border-collapse: collapse; width: 100%; margin: 20px 0;'>"
@@ -203,8 +217,14 @@ jobs:
           SCENARIOS_TABLE="$SCENARIOS_TABLE$(cat /tmp/scenarios_html.txt)"
           SCENARIOS_TABLE="$SCENARIOS_TABLE</table>"
           
-          echo "table_html=$TABLE" >> $GITHUB_OUTPUT
-          echo "scenarios_table=$SCENARIOS_TABLE" >> $GITHUB_OUTPUT
+          # Usar delimitador EOF para valores multilinea
+          echo "table_html<<EOF" >> $GITHUB_OUTPUT
+          echo "$TABLE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "scenarios_table<<EOF" >> $GITHUB_OUTPUT
+          echo "$SCENARIOS_TABLE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           
           # Crear resumen para GitHub Actions
           echo "## 📊 Resultados de las Pruebas" >> $GITHUB_STEP_SUMMARY
