@@ -127,11 +127,28 @@ jobs:
       id: test_results
       run: |
         if [ -f "target/test-results/results.json" ]; then
-          # Extraer estadísticas del JSON de Playwright
-          PASSED=$(jq '[.suites[].specs[].tests[] | select(.status=="expected")] | length' target/test-results/results.json)
-          FAILED=$(jq '[.suites[].specs[].tests[] | select(.status=="unexpected")] | length' target/test-results/results.json)
-          SKIPPED=$(jq '[.suites[].specs[].tests[] | select(.status=="skipped")] | length' target/test-results/results.json)
+          # Listar estructura del JSON para debug
+          echo "📋 Estructura del JSON:"
+          cat target/test-results/results.json | jq '.' || echo "Error al parsear JSON"
+          
+          # Extraer estadísticas usando diferentes métodos según la estructura
+          PASSED=$(jq '[.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "passed")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          FAILED=$(jq '[.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "failed" or .results[]?.status == "timedOut")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          SKIPPED=$(jq '[.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "skipped")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          
+          # Si no hay datos, intentar estructura alternativa
+          if [ "$PASSED" == "0" ] && [ "$FAILED" == "0" ] && [ "$SKIPPED" == "0" ]; then
+            PASSED=$(jq '[.. | objects | select(.status? == "passed")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+            FAILED=$(jq '[.. | objects | select(.status? == "failed" or .status? == "timedOut")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+            SKIPPED=$(jq '[.. | objects | select(.status? == "skipped")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          fi
+          
           TOTAL=$((PASSED + FAILED + SKIPPED))
+          
+          echo "✅ PASSED: $PASSED"
+          echo "❌ FAILED: $FAILED"
+          echo "⏭️ SKIPPED: $SKIPPED"
+          echo "📝 TOTAL: $TOTAL"
           
           # Crear tabla HTML para el email
           TABLE="<table style='border-collapse: collapse; width: 100%; margin: 20px 0;'>"
@@ -159,6 +176,10 @@ jobs:
           echo "| ❌ Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
           echo "| ⏭️ Skipped | $SKIPPED |" >> $GITHUB_STEP_SUMMARY
         else
+          echo "⚠️ Archivo results.json no encontrado"
+          echo "📂 Contenido de target/test-results:"
+          ls -la target/test-results/ || echo "Carpeta no existe"
+          
           echo "table_html=<p style='color: orange;'>⚠️ No se encontró el archivo de resultados JSON</p>" >> $GITHUB_OUTPUT
           echo "⚠️ No se pudo generar el resumen de resultados" >> $GITHUB_STEP_SUMMARY
         fi
