@@ -1,6 +1,7 @@
 import { createBdd } from 'playwright-bdd';
 import { test, expect } from '../utiles/test-fixtures';
 import { LoginPage } from '../pages/login.page';
+import { error } from 'console';
 
 const { Given, When, Then } = createBdd(test);
 
@@ -28,5 +29,10 @@ Then('accedo al sistema como {string}', async ({ page }, role: string) => {
     console.log(`Ingreso exitoso como ${role}`);
 });
 
-
+Then('accedo al sistema como {string} ga', async ({page}, role: string) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.validateLoginSuccess();
+    console.log(`Ingreso exitoso como ${role}`);
+    throw new error('Error intencional para pruebas');
+});
 
