@@ -370,6 +370,7 @@ jobs:
         fi
 
     - name: Deploy to GitHub Pages
+      id: deploy_pages
       if: always()
       uses: peaceiris/actions-gh-pages@v3
       with:
@@ -383,7 +384,7 @@ jobs:
     # 📧 CORREO FINAL CON TABLA DE RESULTADOS Y LINK
     # =========================================================
     - name: Notificar fin de ejecución con tabla de resultados
-      if: always()
+      if: always() && (steps.deploy_pages.outcome == 'success' || steps.deploy_pages.outcome == 'failure')
       uses: dawidd6/action-send-mail@v3
       with:
         server_address: ${{ secrets.MAIL_SERVER }}
