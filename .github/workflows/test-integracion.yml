@@ -49,11 +49,11 @@ jobs:
           # Lunes a Viernes
           if [[ $(date +%u) -lt 6 ]]; then
             echo "tag=@DailyTest" >> $GITHUB_OUTPUT
-            echo "correo=2101010261@undc.edu.pe" >> $GITHUB_OUTPUT
+            echo "correo=2101010261@undc.edu.pe,2002010055@undc.edu.pe" >> $GITHUB_OUTPUT
           else
             # Sábado y domingo
             echo "tag=@WeekendTest" >> $GITHUB_OUTPUT
-            echo "correo=2101010261@undc.edu.pe" >> $GITHUB_OUTPUT
+            echo "correo=2101010261@undc.edu.pe,2002010055@undc.edu.pe" >> $GITHUB_OUTPUT
           fi
         fi
 
