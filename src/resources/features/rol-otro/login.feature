@@ -12,3 +12,8 @@ Feature: Edicion de Datos Personales por Rol Otro (Personal Administrativo)
     Scenario: ES-037 Validar que el rol Otro (Personal Administrativo) puede visualizar los campos en Editar Perfil
         Then ingreso mi nombre de usuario y contraseña validos
         And accedo al sistema como "OTRO"
+
+    @EscenarioError
+    Scenario: Escenario de prueba de error 
+        Then ingreso mi nombre de usuario y contraseña validos
+        And accedo al sistema como "OTRO" ga

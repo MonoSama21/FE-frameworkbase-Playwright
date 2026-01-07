@@ -48,6 +48,10 @@ Los correos incluyen:
 # Por tag específico
 npm run test -- --grep "@Escenario37"
 
+#PARA EJECUTAR CON NAVEGADOR
+npm run test:headed
+npm run test:headed -- --grep "@test"
+
 # Todos los tests
 npm run test
 ```
