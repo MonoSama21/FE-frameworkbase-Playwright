@@ -189,11 +189,16 @@ jobs:
           echo "✅ Plataforma de testing configurada como página principal"
         fi
         
-        # Crear/actualizar historial de ejecuciones
+        # 🔥 DESCARGAR HISTORIAL PREVIO DE GITHUB PAGES
         HISTORY_FILE="gh-pages/history.json"
+        PAGES_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/history.json"
         
-        # Si no existe el archivo, crear array vacío
-        if [ ! -f "$HISTORY_FILE" ]; then
+        echo "📥 Intentando descargar historial previo de: $PAGES_URL"
+        if curl -fsSL "$PAGES_URL" -o "$HISTORY_FILE" 2>/dev/null; then
+          echo "✅ Historial previo descargado correctamente"
+          echo "📊 Cantidad de registros anteriores: $(jq 'length' $HISTORY_FILE)"
+        else
+          echo "⚠️ No se encontró historial previo, creando uno nuevo"
           echo "[]" > "$HISTORY_FILE"
         fi
         
@@ -235,8 +240,11 @@ jobs:
         mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
         
         echo "✅ Historial actualizado"
+        echo "� Total de registros en historial: $(jq 'length' $HISTORY_FILE)"
         echo "📂 Estructura de GitHub Pages:"
         ls -la gh-pages/
+        echo "📄 Contenido de history.json (primeros 3 registros):"
+        jq '.[0:3]' "$HISTORY_FILE"
     
     # =========================================================
     # 📊 EXTRAER RESULTADOS DEL REPORTE JSON DE PLAYWRIGHT
@@ -368,7 +376,8 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./gh-pages
         publish_branch: gh-pages
-        force_orphan: true
+        keep_files: false
+        force_orphan: false
 
     # =========================================================
     # 📧 CORREO FINAL CON TABLA DE RESULTADOS Y LINK
