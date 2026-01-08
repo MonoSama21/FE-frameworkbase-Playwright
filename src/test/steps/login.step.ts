@@ -7,8 +7,22 @@ const { Given, When, Then } = createBdd(test);
 
 let selectedRole = '';
 
+// Obtener URL dinámica según ambiente
+function getEnvironmentUrl(): string {
+    const environment = process.env.TEST_ENVIRONMENT || 'certificacion';
+    
+    if (environment === 'integracion') {
+        return process.env.URL_INTEGRACION || 'https://siasis-dev.vercel.app';
+    } else {
+        return process.env.URL_CERTIFICACION || 'https://siasis-cert.vercel.app';
+    }
+}
+
 Given('estoy en la pagina de login', async ({ page }) => {
-    await page.goto("https://siasis-cert.vercel.app/login");
+    const baseUrl = getEnvironmentUrl();
+    console.log(`🌍 Ejecutando en ambiente: ${process.env.TEST_ENVIRONMENT || 'certificacion'}`);
+    console.log(`🔗 URL: ${baseUrl}/login`);
+    await page.goto(`${baseUrl}/login`);
 });
 
 When('selecciono el rol {string}', async ({ page }, role: string) => {

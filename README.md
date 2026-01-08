@@ -54,6 +54,17 @@ npm run test:headed -- --grep "@test"
 
 # Todos los tests
 npm run test
+
+
+$env:TEST_ENVIRONMENT="integracion"; npm run test:headed -- --grep "@DailyTest"
+
+# Integración con tag específico
+$env:TEST_ENVIRONMENT="integracion"; npm test -- --grep "@DailyTest"
+
+# Certificación con escenario específico
+$env:TEST_ENVIRONMENT="certificacion"; npm test -- --grep "@Escenario37"
+
+
 ```
 
 ---

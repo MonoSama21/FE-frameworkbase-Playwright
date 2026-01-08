@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 import { defineBddConfig, cucumberReporter } from 'playwright-bdd';
+import * as dotenv from 'dotenv';
+
+// Cargar variables de entorno desde playwright.env
+dotenv.config({ path: './playwright.env' });
 
 const testDir = defineBddConfig({
   features: 'src/resources/features/**/*.feature',
@@ -10,7 +14,8 @@ const testDir = defineBddConfig({
 export default defineConfig({
   testDir,
   outputDir: './target/test-results',
-  fullyParallel: true,
+  fullyParallel: false,  // ❌ Desactivado el paralelismo
+  workers: 1, // ✅ Solo 1 worker ejecutando a la vez
   timeout: 90000,
   reporter: [
     ['list', { printSteps: true }],
