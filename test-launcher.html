@@ -740,6 +740,15 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="ambiente">🌍 Ambiente de Ejecución *</label>
+                        <select id="ambiente" required>
+                            <option value="certificacion">Certificación</option>
+                            <option value="integracion">Integración</option>
+                        </select>
+                        <small>Selecciona el ambiente donde se ejecutarán las pruebas</small>
+                    </div>
+
+                    <div class="form-group">
                         <label for="email">📧 Correo de Notificación *</label>
                         <input type="email" id="email" placeholder="tu-correo@ejemplo.com" value="2101010261@undc.edu.pe" required>
                         <small>Recibirás los resultados en este correo</small>
@@ -874,6 +883,7 @@
             const token = document.getElementById('githubToken').value.trim();
             const tag = document.getElementById('tag').value.trim();
             const email = document.getElementById('email').value.trim();
+            const ambiente = document.getElementById('ambiente').value.trim();
             
             try {
                 const response = await fetch(
@@ -887,7 +897,7 @@
                         },
                         body: JSON.stringify({
                             ref: 'main',
-                            inputs: { tag, correo: email }
+                            inputs: { tag, correo: email, ambiente }
                         })
                     }
                 );
@@ -974,7 +984,8 @@
                     </div>
                     <div class="history-meta">
                         <div class="history-meta-item">📅 ${item.dateFormatted}</div>
-                        <div class="history-meta-item">🏗️ Build #${item.runNumber}</div>
+                        <div class="history-meta-item">� ${item.ambiente ? item.ambiente.toUpperCase() : 'N/A'}</div>
+                        <div class="history-meta-item">�🏗️ Build #${item.runNumber}</div>
                         <div class="history-meta-item">⏱️ ${item.duration.toFixed(2)}s</div>
                         <div class="history-meta-item">👤 ${item.actor}</div>
                     </div>

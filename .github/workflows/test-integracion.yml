@@ -13,6 +13,14 @@ on:
         required: true
         type: string
         default: "2101010261@undc.edu.pe"
+      ambiente:
+        description: Ambiente de ejecución
+        required: true
+        type: choice
+        options:
+          - certificacion
+          - integracion
+        default: "certificacion"
         
   schedule:
     # Lunes a Viernes 8 AM — Tag diario
@@ -45,15 +53,18 @@ jobs:
         if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
           echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
           echo "correo=${{ github.event.inputs.correo }}" >> $GITHUB_OUTPUT
+          echo "ambiente=${{ github.event.inputs.ambiente }}" >> $GITHUB_OUTPUT
         else
           # Lunes a Viernes
           if [[ $(date +%u) -lt 6 ]]; then
             echo "tag=@DailyTest" >> $GITHUB_OUTPUT
             echo "correo=2101010261@undc.edu.pe,2002010055@undc.edu.pe" >> $GITHUB_OUTPUT
+            echo "ambiente=certificacion" >> $GITHUB_OUTPUT
           else
             # Sábado y domingo
             echo "tag=@WeekendTest" >> $GITHUB_OUTPUT
             echo "correo=2101010261@undc.edu.pe,2002010055@undc.edu.pe" >> $GITHUB_OUTPUT
+            echo "ambiente=certificacion" >> $GITHUB_OUTPUT
           fi
         fi
 
@@ -105,6 +116,12 @@ jobs:
                           </tr>
                           <tr>
                             <td style="padding: 15px 0; border-bottom: 1px solid #e2e8f0;">
+                              <span style="color: #64748b; font-size: 14px; font-weight: 500;">🌍 Ambiente</span><br>
+                              <span style="color: #10b981; font-size: 18px; font-weight: 600; margin-top: 5px; display: inline-block; text-transform: uppercase;">${{ steps.params.outputs.ambiente }}</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 15px 0; border-bottom: 1px solid #e2e8f0;">
                               <span style="color: #64748b; font-size: 14px; font-weight: 500;">⏱️ Hora de Inicio</span><br>
                               <span style="color: #1e293b; font-size: 16px; margin-top: 5px; display: inline-block;">${{ github.event.repository.updated_at }}</span>
                             </td>
@@ -150,6 +167,8 @@ jobs:
 
     - name: Run Playwright tests by tag
       id: run_tests
+      env:
+        TEST_ENVIRONMENT: ${{ steps.params.outputs.ambiente }}
       run: |
         npm test -- --grep "${{ steps.params.outputs.tag }}"
         echo "resultado=$?" >> $GITHUB_OUTPUT
@@ -217,6 +236,7 @@ jobs:
           "id": "${{ github.run_id }}",
           "runNumber": ${{ github.run_number }},
           "tag": "${{ steps.params.outputs.tag }}",
+          "ambiente": "${{ steps.params.outputs.ambiente }}",
           "date": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
           "dateFormatted": "$(date +"%d/%m/%Y %H:%M")",
           "total": $TOTAL,
@@ -370,7 +390,6 @@ jobs:
         fi
 
     - name: Deploy to GitHub Pages
-      id: deploy_pages
       if: always()
       uses: peaceiris/actions-gh-pages@v3
       with:
@@ -384,7 +403,7 @@ jobs:
     # 📧 CORREO FINAL CON TABLA DE RESULTADOS Y LINK
     # =========================================================
     - name: Notificar fin de ejecución con tabla de resultados
-      if: always() && (steps.deploy_pages.outcome == 'success' || steps.deploy_pages.outcome == 'failure')
+      if: always()
       uses: dawidd6/action-send-mail@v3
       with:
         server_address: ${{ secrets.MAIL_SERVER }}
@@ -430,6 +449,12 @@ jobs:
                             <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
                               <span style="color: #64748b; font-size: 14px;">📋 Tag Ejecutado</span><br>
                               <span style="color: #1e293b; font-size: 16px; font-weight: 600; margin-top: 5px; display: inline-block;">${{ steps.params.outputs.tag }}</span>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                              <span style="color: #64748b; font-size: 14px;">🌍 Ambiente</span><br>
+                              <span style="color: #10b981; font-size: 16px; font-weight: 600; margin-top: 5px; display: inline-block; text-transform: uppercase;">${{ steps.params.outputs.ambiente }}</span>
                             </td>
                           </tr>
                         </table>
