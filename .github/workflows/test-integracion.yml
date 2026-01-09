@@ -346,8 +346,6 @@ jobs:
           
           # Extraer escenarios Outline (3 niveles: archivo → Feature → Scenario Outline → specs)
           jq -r '.suites[]?.suites[]?.suites[]?.specs[]? | "\(.title)|\(.tests[0]?.results[0]?.status // "unknown")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
-          # Extraer escenarios Outline (3 niveles: archivo → Feature → Scenario Outline → specs)
-          jq -r '.suites[]?.suites[]?.suites[]?.specs[]? | "\(.title)|\(.tests[0]?.results[0]?.status // "unknown")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
             if [ -n "$title" ] && [ "$title" != "null" ] && [ "$title" != "" ]; then
               echo "  ✓ Encontrado (Outline): $title - $status"
               case "$status" in
