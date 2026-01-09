@@ -1,5 +1,5 @@
 @test @shoppingCart @cart @HU-002 @DailyTest
-Feature: Happy Path Login SauceDemo
+Feature: Carrito de compras en la tienda en línea
 
     Como usuario de la tienda en línea SauceDemo
     Quiero poder seleccionar productos y agregarlos al carrito de compras

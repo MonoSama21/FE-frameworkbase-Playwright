@@ -1,5 +1,5 @@
 @test @login @authentication @HU-001 @DailyTest @WeekendTest
-Feature: Happy Path Login SauceDemo
+Feature: Inicio de sesión en SauceDemo
 
     Como usuario de SauceDemo
     Quiero iniciar sesión con credenciales válidas
