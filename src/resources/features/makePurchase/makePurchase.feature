@@ -1,5 +1,5 @@
 @test @purchase @checkout @HU-003 @DailyTest
-Feature: Realizar una compra exitosa en la tienda en línea
+Feature: Proceso de compra en la tienda en línea
 
     Como usuario autenticado
     Quiero poder comprar productos en el carrito de compras
@@ -10,7 +10,7 @@ Feature: Realizar una compra exitosa en la tienda en línea
         When debe ser redirigido a la página de productos    
 
     @CP-009 @smoke @critical @happy-path @e2e @checkout-flow
-    Scenario: CP-09 Validar que se pueda completar una compra exitosa
+    Scenario: CP-009 Validar que se pueda completar una compra exitosa
         And hace clic en el botón Add to cart de un producto
         And hace clic en el ícono del carrito
         And hace clic en Checkout
@@ -19,7 +19,7 @@ Feature: Realizar una compra exitosa en la tienda en línea
         Then debe mostrarse un mensaje de confirmación de la compra
 
     @CP-010 @regression @negative @validation @error-handling @unhappy-path
-    Scenario: CP-10 Validar ingreso de información faltante <description> durante el Checkout de una compra
+    Scenario: CP-010 Validar ingreso de información faltante <description> durante el Checkout de una compra
         And hace clic en el botón Add to cart de un producto
         And hace clic en el ícono del carrito
         And hace clic en Checkout
