@@ -19,7 +19,7 @@ Feature: Proceso de compra en la tienda en línea
         Then debe mostrarse un mensaje de confirmación de la compra
 
     @CP-010 @regression @negative @validation @error-handling @unhappy-path
-    Scenario: CP-010 Validar ingreso de información faltante <description> durante el Checkout de una compra
+    Scenario Outline: CP-010 Validar ingreso de información faltante <description> durante el Checkout de una compra
         And hace clic en el botón Add to cart de un producto
         And hace clic en el ícono del carrito
         And hace clic en Checkout
