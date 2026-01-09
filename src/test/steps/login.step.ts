@@ -1,7 +1,7 @@
 import { createBdd } from 'playwright-bdd';
 import { test, expect } from '../utiles/test-fixtures';
 import { LoginPage } from '../pages/login.page';
-import { error } from 'console';
+import { error, log } from 'console';
 
 const { Given, When, Then } = createBdd(test);
 
@@ -18,35 +18,58 @@ function getEnvironmentUrl(): string {
     }
 }
 
-Given('estoy en la pagina de login', async ({ page }) => {
+Given('el usuario se encuentra en el login de SauceDemo', async ({ page }) => {
     const baseUrl = getEnvironmentUrl();
     console.log(`🌍 Ejecutando en ambiente: ${process.env.TEST_ENVIRONMENT || 'certificacion'}`);
-    console.log(`🔗 URL: ${baseUrl}/login`);
-    await page.goto(`${baseUrl}/login`);
+    await page.goto(`${baseUrl}`);
 });
 
-When('selecciono el rol {string}', async ({ page }, role: string) => {
+When('ingresa un nombre de usuario válido y contraseña válida', async ({ page }) => {
+   const loginPage = new LoginPage(page);
+   await loginPage.fillUsername('standard_user');
+   await loginPage.fillPassword('secret_sauce');
+});
+
+When('hace clic en el botón Login', async ({ page }) => {
+   const loginPage = new LoginPage(page);
+   await loginPage.clickLoginButton();
+});
+
+Then('debe ser redirigido a la página de productos', async ({ page }) => {
     const loginPage = new LoginPage(page);
-    selectedRole = role;
-    await loginPage.clickRoleOption(role);
+    await loginPage.verifySuccessfulLogin();
+    console.log('✅ Login exitoso, redirigido a la página de productos.');
 });
 
-When('ingreso mi nombre de usuario y contraseña validos', async ({ page }) => {
+When('ingresa un nombre de usuario válido y contraseña incorrecta', async ({ page }) => {
     const loginPage = new LoginPage(page);
-    await loginPage.validateImgLogoIsVisible();
-    await loginPage.fillCredentials(selectedRole);
+    await loginPage.fillUsername('standard_user');
+    await loginPage.fillPassword('incorrect_password');
 });
 
-Then('accedo al sistema como {string}', async ({ page }, role: string) => {
+When('ingresa un nombre de usuario bloqueado y contraseña válida', async ({ page }) => {
     const loginPage = new LoginPage(page);
-    await loginPage.validateLoginSuccess();
-    console.log(`Ingreso exitoso como ${role}`);
+    await loginPage.fillUsername('locked_out_user');
+    await loginPage.fillPassword('secret_sauce');
 });
 
-Then('accedo al sistema como {string} ga', async ({page}, role: string) => {
+When('ingresa un nombre de usuario inválido y contraseña incorrecta', async ({ page}) => {
+  const loginPage = new LoginPage(page);
+  await loginPage.fillUsername('invalid_user');
+  await loginPage.fillPassword('incorrect_password');
+});
+
+Then('debe ver un mensaje de error: {string}', async ({ page }, expectedMessage: string) => {
     const loginPage = new LoginPage(page);
-    await loginPage.validateLoginSuccess();
-    console.log(`Ingreso exitoso como ${role}`);
-    throw new error('Error intencional para pruebas');
+    await loginPage.verifyErrorMessage(expectedMessage);
 });
 
+When('deja vacío el campo de usuario e ingresa una contraseña válida', async ({ page }) => {
+  const loginPage = new LoginPage(page);
+  await loginPage.fillPassword('secret_sauce');
+});
+
+When('ingresa un nombre de usuario válido y deja vacío el campo de contraseña', async ({ page }) => {
+  const loginPage = new LoginPage(page);
+  await loginPage.fillUsername('standard_user');
+});
