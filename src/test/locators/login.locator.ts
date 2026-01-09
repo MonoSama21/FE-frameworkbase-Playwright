@@ -16,51 +16,25 @@ export class LoginLocator {
         return this.page.getByText('Profesor (Primaria)');
     }
 
-    get optionAssistant(){
-        return this.page.getByText('Auxiliar');
+    get usernameTextBox(){
+        return this.page.locator('#user-name');
     }
 
-    get optionSecondarySchoolTutorTeacher(){
-        return this.page.getByText('Profesor/Tutor (Secundaria)');
+    get passwordTextBox(){
+        return this.page.locator('#password');
     }
 
-    get optionResponsible(){
-        return this.page.getByText('Responsable (Padre/Apoderado)');
+    get loginButton(){
+        return this.page.locator('#login-button');
     }
 
-    get optionOther(){
-        return this.page.getByText('Otro');
+    get headerProducts(){
+        return this.page.locator("#header_container");
     }
 
-    get inputUsername(){
-        return this.page.locator('//input[@name="Nombre_Usuario"]');
+    get incorrectCredentialsAlert(){
+        return this.page.locator("//div[@class='error-message-container error']");
     }
 
-    get inputPassword(){
-        return this.page.locator('//input[@name="Contraseña"]');
-    }
 
-    get btnLogin(){
-        return this.page.getByRole('button', { name: 'Ingresar' });
-    }
-
-    get imgSchoolLogin(){
-        return this.page.locator('//img[@alt="Colegio Asuncion 8 Logo"]');
-    }
-
-    get messageWelcomeLogin(){
-        return this.page.locator("#header");
-    }
-
-    get imgLogoUNDC(){
-        return this.page.locator('//img[@alt="Logo UNDC"]');
-    }
-
-    get modalInvalidCredentials(){
-        return this.page.locator('//div[@role="alert"]');
-    }
-
-    get modalLoginOptionsRole(){
-        return this.page.locator('/html/body/main/div');
-    }
 }
