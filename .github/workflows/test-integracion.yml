@@ -287,11 +287,20 @@ jobs:
           jq '.suites' target/test-results/results.json | head -200
           echo "================================"
           
-          # Extraer estadísticas usando la estructura correcta (tres niveles de suites, luego specs)
-          # Contamos por specs[], no por tests[], porque cada spec es un escenario ejecutado
-          PASSED=$(jq '[.suites[]?.suites[]?.suites[]?.specs[]? | select(.tests[0]?.results[0]?.status == "passed")] | length' target/test-results/results.json 2>/dev/null || echo "0")
-          FAILED=$(jq '[.suites[]?.suites[]?.suites[]?.specs[]? | select(.tests[0]?.results[0]?.status == "failed" or .tests[0]?.results[0]?.status == "timedOut")] | length' target/test-results/results.json 2>/dev/null || echo "0")
-          SKIPPED=$(jq '[.suites[]?.suites[]?.suites[]?.specs[]? | select(.tests[0]?.results[0]?.status == "skipped")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          # Extraer estadísticas combinando ambos niveles de specs
+          # Nivel 2: Scenarios normales → .suites[].suites[].specs[]
+          # Nivel 3: Scenario Outline → .suites[].suites[].suites[].specs[]
+          PASSED_LEVEL2=$(jq '[.suites[]?.suites[]?.specs[]? | select(.tests[0]?.results[0]?.status == "passed")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          PASSED_LEVEL3=$(jq '[.suites[]?.suites[]?.suites[]?.specs[]? | select(.tests[0]?.results[0]?.status == "passed")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          PASSED=$((PASSED_LEVEL2 + PASSED_LEVEL3))
+          
+          FAILED_LEVEL2=$(jq '[.suites[]?.suites[]?.specs[]? | select(.tests[0]?.results[0]?.status == "failed" or .tests[0]?.results[0]?.status == "timedOut")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          FAILED_LEVEL3=$(jq '[.suites[]?.suites[]?.suites[]?.specs[]? | select(.tests[0]?.results[0]?.status == "failed" or .tests[0]?.results[0]?.status == "timedOut")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          FAILED=$((FAILED_LEVEL2 + FAILED_LEVEL3))
+          
+          SKIPPED_LEVEL2=$(jq '[.suites[]?.suites[]?.specs[]? | select(.tests[0]?.results[0]?.status == "skipped")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          SKIPPED_LEVEL3=$(jq '[.suites[]?.suites[]?.suites[]?.specs[]? | select(.tests[0]?.results[0]?.status == "skipped")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          SKIPPED=$((SKIPPED_LEVEL2 + SKIPPED_LEVEL3))
           
           # Si no hay datos, intentar estructura alternativa
           if [ "$PASSED" == "0" ] && [ "$FAILED" == "0" ] && [ "$SKIPPED" == "0" ]; then
@@ -314,13 +323,33 @@ jobs:
           > /tmp/scenarios_list.txt
           > /tmp/scenarios_html.txt
           
-          # Usar la estructura correcta: suites[].suites[].suites[].specs[]
-          # El título está en specs[].title y el estado en specs[].tests[0].results[0].status
-          # Tres niveles de suites: archivo.feature.spec.js → Feature → Scenario/Scenario Outline
-          # Esto maneja correctamente los Scenario Outline que generan múltiples specs con Examples
+          # Extraer escenarios normales (2 niveles: archivo → Feature → specs)
+          jq -r '.suites[]?.suites[]?.specs[]? | "\(.title)|\(.tests[0]?.results[0]?.status // "unknown")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
+            if [ -n "$title" ] && [ "$title" != "null" ] && [ "$title" != "" ]; then
+              echo "  ✓ Encontrado (Scenario): $title - $status"
+              case "$status" in
+                "passed")
+                  echo "- ✅ **PASSED**: $title" >> /tmp/scenarios_list.txt
+                  echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:green; font-weight: bold;'>✅ PASSED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
+                  ;;
+                "failed"|"timedOut")
+                  echo "- ❌ **FAILED**: $title" >> /tmp/scenarios_list.txt
+                  echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:red; font-weight: bold;'>❌ FAILED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
+                  ;;
+                "skipped")
+                  echo "- ⏭️ **SKIPPED**: $title" >> /tmp/scenarios_list.txt
+                  echo "<tr><td style='border: 1px solid #ddd; padding: 10px;'><span style='color:gray; font-weight: bold;'>⏭️ SKIPPED</span></td><td style='border: 1px solid #ddd; padding: 10px;'>$title</td></tr>" >> /tmp/scenarios_html.txt
+                  ;;
+              esac
+            fi
+          done
+          
+          # Extraer escenarios Outline (3 niveles: archivo → Feature → Scenario Outline → specs)
+          jq -r '.suites[]?.suites[]?.suites[]?.specs[]? | "\(.title)|\(.tests[0]?.results[0]?.status // "unknown")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
+          # Extraer escenarios Outline (3 niveles: archivo → Feature → Scenario Outline → specs)
           jq -r '.suites[]?.suites[]?.suites[]?.specs[]? | "\(.title)|\(.tests[0]?.results[0]?.status // "unknown")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
             if [ -n "$title" ] && [ "$title" != "null" ] && [ "$title" != "" ]; then
-              echo "  ✓ Encontrado: $title - $status"
+              echo "  ✓ Encontrado (Outline): $title - $status"
               case "$status" in
                 "passed")
                   echo "- ✅ **PASSED**: $title" >> /tmp/scenarios_list.txt
