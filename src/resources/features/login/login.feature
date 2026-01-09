@@ -1,4 +1,4 @@
-@test @login @authentication @HU-001 @DailyTest
+@test @login @authentication @HU-001 @DailyTest @WeekendTest
 Feature: Happy Path Login SauceDemo
 
     Como usuario de SauceDemo
