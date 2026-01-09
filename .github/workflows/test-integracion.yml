@@ -191,15 +191,23 @@ jobs:
     - name: Preparar GitHub Pages con historial
       if: always()
       run: |
-        mkdir -p gh-pages/report
+        RUN_ID="${{ github.run_id }}"
+        mkdir -p gh-pages/reports/$RUN_ID
         
-        # Copiar reporte de Playwright al subdirectorio 'report'
+        # Copiar reporte de Playwright al subdirectorio específico de esta ejecución
+        if [ -d "target/playwright-report" ]; then
+          cp -r target/playwright-report/* gh-pages/reports/$RUN_ID/
+          echo "✅ Reporte de Playwright copiado a /reports/$RUN_ID"
+        else
+          mkdir -p gh-pages/reports/$RUN_ID
+          echo "<h1>No se generó reporte</h1>" > gh-pages/reports/$RUN_ID/index.html
+        fi
+        
+        # Copiar también a /report para mantener compatibilidad (último reporte)
+        mkdir -p gh-pages/report
         if [ -d "target/playwright-report" ]; then
           cp -r target/playwright-report/* gh-pages/report/
-          echo "✅ Reporte de Playwright copiado a /report"
-        else
-          mkdir -p gh-pages/report
-          echo "<h1>No se generó reporte</h1>" > gh-pages/report/index.html
+          echo "✅ Reporte también copiado a /report (último reporte)"
         fi
         
         # Copiar test-launcher.html como index.html (página principal)
@@ -249,7 +257,7 @@ jobs:
           "commit": "${{ github.sha }}",
           "commitShort": "${GITHUB_SHA:0:7}",
           "actor": "${{ github.actor }}",
-          "reportUrl": "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/report",
+          "reportUrl": "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/reports/${{ github.run_id }}",
           "actionsUrl": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         }
         EOF
@@ -305,8 +313,9 @@ jobs:
           > /tmp/scenarios_list.txt
           > /tmp/scenarios_html.txt
           
-          # Usar la estructura correcta: suites[].suites[].specs[]
-          jq -r '.suites[]?.suites[]?.specs[]? | "\(.title)|\(.tests[0]?.results[0]?.status // "unknown")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
+          # Usar la estructura correcta: suites[].suites[].specs[].tests[] (todos los tests, no solo [0])
+          # Esto maneja correctamente los Scenario Outline que generan múltiples tests
+          jq -r '.suites[]?.suites[]?.specs[]?.tests[]? | "\(.title)|\(.results[0]?.status // "unknown")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
             if [ -n "$title" ] && [ "$title" != "null" ] && [ "$title" != "" ]; then
               echo "  ✓ Encontrado: $title - $status"
               case "$status" in
