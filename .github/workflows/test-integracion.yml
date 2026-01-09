@@ -287,10 +287,11 @@ jobs:
           jq '.suites' target/test-results/results.json | head -200
           echo "================================"
           
-          # Extraer estadísticas usando la estructura correcta (tres niveles de suites anidados)
-          PASSED=$(jq '[.suites[]?.suites[]?.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "passed")] | length' target/test-results/results.json 2>/dev/null || echo "0")
-          FAILED=$(jq '[.suites[]?.suites[]?.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "failed" or .results[]?.status == "timedOut")] | length' target/test-results/results.json 2>/dev/null || echo "0")
-          SKIPPED=$(jq '[.suites[]?.suites[]?.suites[]?.specs[]?.tests[]? | select(.results[]?.status == "skipped")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          # Extraer estadísticas usando la estructura correcta (tres niveles de suites, luego specs)
+          # Contamos por specs[], no por tests[], porque cada spec es un escenario ejecutado
+          PASSED=$(jq '[.suites[]?.suites[]?.suites[]?.specs[]? | select(.tests[0]?.results[0]?.status == "passed")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          FAILED=$(jq '[.suites[]?.suites[]?.suites[]?.specs[]? | select(.tests[0]?.results[0]?.status == "failed" or .tests[0]?.results[0]?.status == "timedOut")] | length' target/test-results/results.json 2>/dev/null || echo "0")
+          SKIPPED=$(jq '[.suites[]?.suites[]?.suites[]?.specs[]? | select(.tests[0]?.results[0]?.status == "skipped")] | length' target/test-results/results.json 2>/dev/null || echo "0")
           
           # Si no hay datos, intentar estructura alternativa
           if [ "$PASSED" == "0" ] && [ "$FAILED" == "0" ] && [ "$SKIPPED" == "0" ]; then
@@ -313,10 +314,11 @@ jobs:
           > /tmp/scenarios_list.txt
           > /tmp/scenarios_html.txt
           
-          # Usar la estructura correcta: suites[].suites[].suites[].specs[].tests[]
+          # Usar la estructura correcta: suites[].suites[].suites[].specs[]
+          # El título está en specs[].title y el estado en specs[].tests[0].results[0].status
           # Tres niveles de suites: archivo.feature.spec.js → Feature → Scenario/Scenario Outline
-          # Esto maneja correctamente los Scenario Outline que generan múltiples tests con Examples
-          jq -r '.suites[]?.suites[]?.suites[]?.specs[]?.tests[]? | "\(.title)|\(.results[0]?.status // "unknown")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
+          # Esto maneja correctamente los Scenario Outline que generan múltiples specs con Examples
+          jq -r '.suites[]?.suites[]?.suites[]?.specs[]? | "\(.title)|\(.tests[0]?.results[0]?.status // "unknown")"' target/test-results/results.json 2>/dev/null | while IFS='|' read -r title status; do
             if [ -n "$title" ] && [ "$title" != "null" ] && [ "$title" != "" ]; then
               echo "  ✓ Encontrado: $title - $status"
               case "$status" in
