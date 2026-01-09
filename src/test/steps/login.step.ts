@@ -35,6 +35,16 @@ When('hace clic en el botón Login', async ({ page }) => {
    await loginPage.clickLoginButton();
 });
 
+Given('el usuario ha ingresado sesión con éxito en SauceDemo', async ({ page }) => {
+    const baseUrl = getEnvironmentUrl();
+    console.log(`🌍 Ejecutando en ambiente: ${process.env.TEST_ENVIRONMENT || 'certificacion'}`);
+    await page.goto(`${baseUrl}`);
+    const loginPage = new LoginPage(page);
+    await loginPage.fillUsername('standard_user');
+    await loginPage.fillPassword('secret_sauce');
+    await loginPage.clickLoginButton();
+});
+
 Then('debe ser redirigido a la página de productos', async ({ page }) => {
     const loginPage = new LoginPage(page);
     await loginPage.verifySuccessfulLogin();
