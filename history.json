@@ -1,5 +1,25 @@
 [
   {
+    "id": "20843172676",
+    "runNumber": 40,
+    "tag": "@CP-010",
+    "ambiente": "certificacion",
+    "date": "2026-01-09T06:19:11Z",
+    "dateFormatted": "09/01/2026 06:19",
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "duration": 0,
+    "status": "passed",
+    "branch": "main",
+    "commit": "68ad115874b4e15ab01fdbccb1ce3d9117a46ec8",
+    "commitShort": "68ad115",
+    "actor": "MonoSama21",
+    "reportUrl": "https://MonoSama21.github.io/FE-frameworkbase-Playwright/reports/20843172676",
+    "actionsUrl": "https://github.com/MonoSama21/FE-frameworkbase-Playwright/actions/runs/20843172676"
+  },
+  {
     "id": "20843096055",
     "runNumber": 39,
     "tag": "@CP-010",
