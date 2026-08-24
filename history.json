@@ -1,5 +1,25 @@
 [
   {
+    "id": "32734685653",
+    "runNumber": 287,
+    "tag": "@DailyTest",
+    "ambiente": "certificacion",
+    "date": "2026-08-24T13:47:58Z",
+    "dateFormatted": "24/08/2026 13:47",
+    "total": 9,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "duration": 7.981,
+    "status": "passed",
+    "branch": "main",
+    "commit": "b855410e1606ca0e74ccee7eb467570dad4b3282",
+    "commitShort": "b855410",
+    "actor": "MonoSama21",
+    "reportUrl": "https://MonoSama21.github.io/FE-frameworkbase-Playwright/reports/32734685653",
+    "actionsUrl": "https://github.com/MonoSama21/FE-frameworkbase-Playwright/actions/runs/32734685653"
+  },
+  {
     "id": "32622636748",
     "runNumber": 286,
     "tag": "@WeekendTest",
@@ -978,25 +998,5 @@
     "actor": "MonoSama21",
     "reportUrl": "https://MonoSama21.github.io/FE-frameworkbase-Playwright/reports/28734994619",
     "actionsUrl": "https://github.com/MonoSama21/FE-frameworkbase-Playwright/actions/runs/28734994619"
-  },
-  {
-    "id": "28700315200",
-    "runNumber": 236,
-    "tag": "@WeekendTest",
-    "ambiente": "certificacion",
-    "date": "2026-07-04T08:19:30Z",
-    "dateFormatted": "04/07/2026 08:19",
-    "total": 0,
-    "passed": 0,
-    "failed": 0,
-    "skipped": 0,
-    "duration": 0,
-    "status": "passed",
-    "branch": "main",
-    "commit": "b855410e1606ca0e74ccee7eb467570dad4b3282",
-    "commitShort": "b855410",
-    "actor": "MonoSama21",
-    "reportUrl": "https://MonoSama21.github.io/FE-frameworkbase-Playwright/reports/28700315200",
-    "actionsUrl": "https://github.com/MonoSama21/FE-frameworkbase-Playwright/actions/runs/28700315200"
   }
 ]
